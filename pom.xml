@@ -9,7 +9,7 @@
 
     <name>Dropwizard Swagger support</name>
     <description>A simple way to document your REST APIs in DropWizard using Swagger</description>
-    <url>https://github.com/federecio/dropwizard-swagger/</url>
+    <url>https://github.com/jasonfry89/dropwizard-swagger/</url>
     <inceptionYear>2014</inceptionYear>
 
     <licenses>
@@ -21,8 +21,8 @@
 
     <developers>
         <developer>
-            <name>Federico Recio</name>
-            <url>http://about.me/federecio</url>
+            <name>Jason Fry</name>
+            <url>http://google.com</url>
         </developer>
     </developers>
 
@@ -40,9 +40,9 @@
     </distributionManagement>
 
     <scm>
-        <connection>scm:git:git://github.com:federecio/dropwizard-swagger.git</connection>
-        <developerConnection>scm:git:git@github.com:federecio/dropwizard-swagger.git</developerConnection>
-        <url>http://github.com/federecio/dropwizard-swagger</url>
+        <connection>scm:git:git://github.com:jasonfry89/dropwizard-swagger.git</connection>
+        <developerConnection>scm:git:git@github.com:jasonfry89/dropwizard-swagger.git</developerConnection>
+        <url>http://github.com/jasonfry89/dropwizard-swagger</url>
         <tag>HEAD</tag>
     </scm>
 
