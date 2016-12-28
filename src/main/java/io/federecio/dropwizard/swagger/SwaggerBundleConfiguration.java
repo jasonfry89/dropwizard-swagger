@@ -17,6 +17,9 @@ package io.federecio.dropwizard.swagger;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.models.auth.SecuritySchemeDefinition;
+
+import java.util.List;
 
 /**
  * For the meaning of all these properties please refer to Swagger documentation or {@link io.swagger.jaxrs.config.BeanConfig}
@@ -56,6 +59,9 @@ public class SwaggerBundleConfiguration {
 
     @JsonProperty
     private String licenseUrl;
+
+    @JsonProperty
+    private List<SecurityConfiguration> securityConfigurations;
 
     /**
      * For most of the scenarios this property is not needed.
@@ -141,6 +147,14 @@ public class SwaggerBundleConfiguration {
         this.uriPrefix = uriPrefix;
     }
 
+    public List<SecurityConfiguration> getSecurityConfigurations() {
+        return securityConfigurations;
+    }
+
+    public void setSecurityConfigurations(List<SecurityConfiguration> securityConfigurations) {
+        this.securityConfigurations = securityConfigurations;
+    }
+
     @Override
     public String toString() {
         return "SwaggerBundleConfiguration{" +
@@ -152,6 +166,8 @@ public class SwaggerBundleConfiguration {
                 ", contact='" + contact + '\'' +
                 ", license='" + license + '\'' +
                 ", licenseUrl='" + licenseUrl + '\'' +
+                ", securityConfigurations=" + securityConfigurations +
+                ", uriPrefix='" + uriPrefix + '\'' +
                 '}';
     }
 }

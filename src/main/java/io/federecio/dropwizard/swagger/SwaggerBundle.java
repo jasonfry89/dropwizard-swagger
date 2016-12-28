@@ -23,8 +23,14 @@ import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
+import io.swagger.config.ScannerFactory;
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
+import io.swagger.jaxrs.listing.SwaggerSerializers;
+import io.swagger.models.Swagger;
+import io.swagger.models.auth.ApiKeyAuthDefinition;
+import io.swagger.models.auth.In;
+import io.swagger.models.auth.OAuth2Definition;
 
 import java.util.Map;
 
@@ -61,14 +67,19 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
         environment.jersey().register(new SwaggerResource(configurationHelper.getUrlPattern()));
         environment.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
-        setUpSwagger(swaggerBundleConfiguration, configurationHelper.getUrlPattern());
+        BeanConfig beanConfig = setUpSwagger(swaggerBundleConfiguration, configurationHelper.getUrlPattern());
         environment.jersey().register(new ApiListingResource());
+        environment.jersey().register(new SwaggerSerializers());
+
+        Swagger swagger = beanConfig.getSwagger();
+
+        environment.getApplicationContext().setAttribute("swagger", swagger);
     }
 
     @SuppressWarnings("unused")
     protected abstract SwaggerBundleConfiguration getSwaggerBundleConfiguration(T configuration);
 
-    private void setUpSwagger(SwaggerBundleConfiguration swaggerBundleConfiguration, String urlPattern) {
+    private BeanConfig setUpSwagger(SwaggerBundleConfiguration swaggerBundleConfiguration, String urlPattern) throws Exception {
         BeanConfig config = new BeanConfig();
 
         if (swaggerBundleConfiguration.getTitle() != null) {
@@ -99,6 +110,21 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
             config.setTermsOfServiceUrl(swaggerBundleConfiguration.getTermsOfServiceUrl());
         }
 
+//        if (swaggerBundleConfiguration.getSecurityConfigurations() != null) {
+//            for (SecurityConfiguration securityConfiguration : swaggerBundleConfiguration.getSecurityConfigurations()) {
+//                if(!securityConfiguration.getType().equals("oauth")) {
+//                    throw new Exception("asd");
+//                }
+//
+//                OAuth2Definition definition = new OAuth2Definition();
+//                definition.setFlow(securityConfiguration.getFlow());
+//                definition.setAuthorizationUrl(securityConfiguration.getAuthorizationUrl());
+//                definition.setTokenUrl(securityConfiguration.getTokenUrl());
+//                definition.setType(securityConfiguration.getType());
+//                config.getSwagger().addSecurityDefinition(securityConfiguration.getName(), definition);
+//            }
+//        }
+
         config.setBasePath(urlPattern);
 
         if (swaggerBundleConfiguration.getResourcePackage() != null) {
@@ -107,7 +133,8 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
             throw new IllegalStateException("Resource package needs to be specified for Swagger to correctly detect annotated resources");
         }
 
-
         config.setScan(true);
+
+        return config;
     }
 }
