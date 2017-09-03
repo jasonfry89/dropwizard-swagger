@@ -87,19 +87,19 @@
         }
       }
 
-      // https://stackoverflow.com/questions/7731778/get-query-string-parameters-with-jquery
-      function getQueryParameter(key) {
-        key = key.replace(/[*+?^$.\[\]{}()|\\\/]/g, "\\$&"); // escape RegEx meta chars
-        var match = location.search.match(new RegExp("[?&]"+key+"=([^&]+)(&|$)"));
-        return match && decodeURIComponent(match[1].replace(/\+/g, " "));
-      }
+      $('#input_apiKey').change(addApiKeyAuthorization);
 
-      var tokenParam = getQueryParameter("token");
+        // https://stackoverflow.com/questions/7731778/get-query-string-parameters-with-jquery
+        function getQueryParameter(key) {
+            key = key.replace(/[*+?^$.\[\]{}()|\\\/]/g, "\\$&"); // escape RegEx meta chars
+            var match = location.search.match(new RegExp("[?&]"+key+"=([^&]+)(&|$)"));
+            return match && decodeURIComponent(match[1].replace(/\+/g, " "));
+        }
+
+        var tokenParam = getQueryParameter("token");
         if(tokenParam) {
             $('#input_apiKey').val(tokenParam);
         }
-
-      $('#input_apiKey').change(addApiKeyAuthorization);
 
       // if you have an apiKey you would like to pre-populate on the page for demonstration purposes...
       /*

@@ -91,6 +91,18 @@
 
       $('#input_apiKey').change(addApiKeyAuthorization);
 
+      // https://stackoverflow.com/questions/7731778/get-query-string-parameters-with-jquery
+      function getQueryParameter(key) {
+        key = key.replace(/[*+?^$.\[\]{}()|\\\/]/g, "\\$&"); // escape RegEx meta chars
+        var match = location.search.match(new RegExp("[?&]"+key+"=([^&]+)(&|$)"));
+        return match && decodeURIComponent(match[1].replace(/\+/g, " "));
+      }
+
+      var tokenParam = getQueryParameter("token");
+        if(tokenParam) {
+            $('#input_apiKey').val(tokenParam);
+        }
+
       window.swaggerUi.load();
 
       function log() {
