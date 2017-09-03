@@ -5,7 +5,7 @@
 
     <groupId>com.github.jasonfry89</groupId>
     <artifactId>dropwizard-swagger</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 
     <name>Dropwizard Swagger support</name>
     <description>A simple way to document your REST APIs in DropWizard using Swagger</description>
