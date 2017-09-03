@@ -101,6 +101,7 @@
       var tokenParam = getQueryParameter("token");
         if(tokenParam) {
             $('#input_apiKey').val(tokenParam);
+            addApiKeyAuthorization();
         }
 
       window.swaggerUi.load();
