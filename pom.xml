@@ -5,7 +5,7 @@
 
     <groupId>com.github.jasonfry89</groupId>
     <artifactId>dropwizard-swagger</artifactId>
-    <version>1.0.5</version>
+    <version>1.2.0</version>
 
     <name>Dropwizard Swagger support</name>
     <description>A simple way to document your REST APIs in DropWizard using Swagger</description>
@@ -47,12 +47,12 @@
     </scm>
 
     <properties>
-        <dropwizard.version>1.0.5</dropwizard.version>
+        <dropwizard.version>1.2.0</dropwizard.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <file.encoding>UTF-8</file.encoding>
-        <jdk.version>1.7</jdk.version>
-        <swagger.version>1.5.12</swagger.version>
+        <jdk.version>1.8</jdk.version>
+        <swagger.version>1.5.16</swagger.version>
     </properties>
 
     <dependencies>
