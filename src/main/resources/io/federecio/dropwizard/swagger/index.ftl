@@ -77,7 +77,8 @@
         jsonEditor: false,
         apisSorter: "alpha",
         defaultModelRendering: 'schema',
-        showRequestHeaders: false
+        showRequestHeaders: false,
+        validatorUrl: null
       });
 
       function addApiKeyAuthorization(){
