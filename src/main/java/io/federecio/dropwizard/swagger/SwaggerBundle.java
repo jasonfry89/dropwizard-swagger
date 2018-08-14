@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import io.dropwizard.Configuration;
 import io.dropwizard.ConfiguredBundle;
 import io.dropwizard.assets.AssetsBundle;
+import io.dropwizard.jersey.DropwizardResourceConfig;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
@@ -31,6 +32,8 @@ import io.swagger.models.Swagger;
 import io.swagger.models.auth.ApiKeyAuthDefinition;
 import io.swagger.models.auth.In;
 import io.swagger.models.auth.OAuth2Definition;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.model.Resource;
 
 import java.util.Map;
 
@@ -64,15 +67,30 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
         ConfigurationHelper configurationHelper = new ConfigurationHelper(configuration, swaggerBundleConfiguration);
         new AssetsBundle(Constants.SWAGGER_RESOURCES_PATH, configurationHelper.getSwaggerUriPath(), null, Constants.SWAGGER_ASSETS_NAME).run(environment);
 
-        environment.jersey().register(new SwaggerResource(configurationHelper.getUrlPattern()));
-        environment.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        // Register the resource that returns the swagger HTML
+        String urlPattern = configurationHelper.getUrlPattern();
+        Resource swaggerHTMLResource = Resource
+                .builder(SwaggerResource.class)
+                .path("/swagger222")
+                .build();
+        environment.jersey().register(swaggerHTMLResource);
+//        environment.jersey().register(new SwaggerResource(urlPattern));
 
         BeanConfig beanConfig = setUpSwagger(swaggerBundleConfiguration, configurationHelper.getUrlPattern());
-        environment.jersey().register(new ApiListingResource());
+
+        // Register the resource that returns swagger.json
+        Resource swaggerJSONResource = Resource
+                .builder(ApiListingResource.class)
+                .path("/swagger222.{type:json|yaml}")
+                .build();
+        environment.jersey().register(swaggerJSONResource);
+//        environment.jersey().register(new ApiListingResource());
+
+        // Register the serializers
         environment.jersey().register(new SwaggerSerializers());
+        environment.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
         Swagger swagger = beanConfig.getSwagger();
-
         environment.getApplicationContext().setAttribute("swagger", swagger);
     }
 
