@@ -30,9 +30,9 @@ import io.dropwizard.server.SimpleServerFactory;
 public class ConfigurationHelper {
 
     private final Configuration configuration;
-    private final SwaggerBundleConfiguration swaggerBundleConfiguration;
+    private final SingleSwaggerConfiguration swaggerBundleConfiguration;
 
-    public ConfigurationHelper(Configuration configuration, SwaggerBundleConfiguration swaggerBundleConfiguration) {
+    public ConfigurationHelper(Configuration configuration, SingleSwaggerConfiguration swaggerBundleConfiguration) {
         this.configuration = configuration;
         this.swaggerBundleConfiguration = swaggerBundleConfiguration;
     }

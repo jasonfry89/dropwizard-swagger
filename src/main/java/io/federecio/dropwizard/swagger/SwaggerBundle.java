@@ -55,50 +55,52 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
     }
 
     @Override
-    public void run(T configuration, Environment environment) throws Exception {
+    public void run(T configuration, Environment environment) {
         SwaggerBundleConfiguration swaggerBundleConfiguration = getSwaggerBundleConfiguration(configuration);
         if (swaggerBundleConfiguration == null) {
             throw new IllegalStateException("You need to provide an instance of SwaggerBundleConfiguration");
         }
 
-        ConfigurationHelper configurationHelper = new ConfigurationHelper(configuration, swaggerBundleConfiguration);
-        new AssetsBundle(Constants.SWAGGER_RESOURCES_PATH, configurationHelper.getSwaggerUriPath(), null, Constants.SWAGGER_ASSETS_NAME).run(environment);
+        swaggerBundleConfiguration.getSwaggers().forEach(singleSwaggerConfiguration -> {
+            ConfigurationHelper configurationHelper = new ConfigurationHelper(configuration, singleSwaggerConfiguration);
+            new AssetsBundle(Constants.SWAGGER_RESOURCES_PATH, configurationHelper.getSwaggerUriPath(), null, Constants.SWAGGER_ASSETS_NAME).run(environment);
 
-        // Register the resource that returns the swagger HTML
-        String urlPattern = configurationHelper.getUrlPattern();
-        Resource.Builder resourceBuilder = Resource
-                .builder()
-                .path(urlPattern);
-        resourceBuilder
-                .addMethod("GET")
-                .produces(MediaType.TEXT_HTML)
-                .handledBy((Inflector<ContainerRequestContext, SwaggerView>) containerRequestContext -> new SwaggerView(urlPattern));
-        Resource resource = resourceBuilder.build();
-        environment.jersey().getResourceConfig().registerResources(resource);
+            // Register the resource that returns the swagger HTML
+            String urlPattern = configurationHelper.getUrlPattern();
+            Resource.Builder resourceBuilder = Resource
+                    .builder()
+                    .path(urlPattern);
+            resourceBuilder
+                    .addMethod("GET")
+                    .produces(MediaType.TEXT_HTML)
+                    .handledBy((Inflector<ContainerRequestContext, SwaggerView>) containerRequestContext -> new SwaggerView(urlPattern));
+            Resource resource = resourceBuilder.build();
+            environment.jersey().getResourceConfig().registerResources(resource);
 //        environment.jersey().register(new SwaggerResource(urlPattern));
 
-        BeanConfig beanConfig = setUpSwagger(swaggerBundleConfiguration, configurationHelper.getUrlPattern());
+            BeanConfig beanConfig = setUpSwagger(singleSwaggerConfiguration, configurationHelper.getUrlPattern());
 
-        // Register the resource that returns swagger.json
-        Resource swaggerJSONResource = Resource
-                .builder(ApiListingResource.class)
-                .path(urlPattern + ".{type:json|yaml}")
-                .build();
-        environment.jersey().getResourceConfig().registerResources(swaggerJSONResource);
+            // Register the resource that returns swagger.json
+            Resource swaggerJSONResource = Resource
+                    .builder(ApiListingResource.class)
+                    .path(urlPattern + ".{type:json|yaml}")
+                    .build();
+            environment.jersey().getResourceConfig().registerResources(swaggerJSONResource);
 //        environment.jersey().register(new ApiListingResource());
 
-        // Register the serializers
-        environment.jersey().register(new SwaggerSerializers());
-        environment.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            // Register the serializers
+            environment.jersey().register(new SwaggerSerializers());
+            environment.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
-        Swagger swagger = beanConfig.getSwagger();
-        environment.getApplicationContext().setAttribute("swagger", swagger);
+            Swagger swagger = beanConfig.getSwagger();
+            environment.getApplicationContext().setAttribute(urlPattern, swagger);
+        });
     }
 
     @SuppressWarnings("unused")
     protected abstract SwaggerBundleConfiguration getSwaggerBundleConfiguration(T configuration);
 
-    private BeanConfig setUpSwagger(SwaggerBundleConfiguration swaggerBundleConfiguration, String urlPattern) throws Exception {
+    private BeanConfig setUpSwagger(SingleSwaggerConfiguration swaggerBundleConfiguration, String urlPattern) {
         BeanConfig config = new BeanConfig();
 
         if (swaggerBundleConfiguration.getTitle() != null) {
