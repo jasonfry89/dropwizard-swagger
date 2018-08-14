@@ -68,12 +68,11 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
         new AssetsBundle(Constants.SWAGGER_RESOURCES_PATH, configurationHelper.getSwaggerUriPath(), null, Constants.SWAGGER_ASSETS_NAME).run(environment);
 
         // Register the resource that returns the swagger HTML
-        String urlPattern = configurationHelper.getUrlPattern();
-        Resource swaggerHTMLResource = Resource
-                .builder(SwaggerResource.class)
-                .path("/swagger222")
-                .build();
-        environment.jersey().register(swaggerHTMLResource);
+//        String urlPattern = configurationHelper.getUrlPattern();
+//        Resource swaggerHTMLResource = Resource
+//                .builder(SwaggerResource.class)
+//                .build();
+//        environment.jersey().register(swaggerHTMLResource);
 //        environment.jersey().register(new SwaggerResource(urlPattern));
 
         BeanConfig beanConfig = setUpSwagger(swaggerBundleConfiguration, configurationHelper.getUrlPattern());
@@ -81,7 +80,6 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
         // Register the resource that returns swagger.json
         Resource swaggerJSONResource = Resource
                 .builder(ApiListingResource.class)
-                .path("/swagger222.{type:json|yaml}")
                 .build();
         environment.jersey().register(swaggerJSONResource);
 //        environment.jersey().register(new ApiListingResource());
