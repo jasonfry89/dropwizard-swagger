@@ -80,6 +80,7 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
         // Register the resource that returns swagger.json
         Resource swaggerJSONResource = Resource
                 .builder(ApiListingResource.class)
+                .path("/swagger222.{type:json|yaml}")
                 .build();
         environment.jersey().getResourceConfig().registerResources(swaggerJSONResource);
 //        environment.jersey().register(new ApiListingResource());
