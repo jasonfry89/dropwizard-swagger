@@ -1,3 +1,18 @@
+/**
+ * Copyright (C) 2014 Federico Recio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.federecio.dropwizard.swagger;
 
 import io.swagger.jaxrs.config.SwaggerConfigLocator;
@@ -16,6 +31,11 @@ public class SwaggerContextService extends io.swagger.jaxrs.config.SwaggerContex
     private String contextId;
     private String basePath;
     private ServletConfig sc;
+
+    public SwaggerContextService(ServletConfig sc, String basePath) {
+        this.basePath = normalizeBasePath(basePath);
+        this.sc = sc;
+    }
 
     public Swagger getSwagger(String uriPath) {
         Swagger swagger = null;
@@ -47,5 +67,27 @@ public class SwaggerContextService extends io.swagger.jaxrs.config.SwaggerContex
             }
         }
         return SwaggerConfigLocator.getInstance().getSwagger(configIdKey);
+    }
+
+    /**
+     * Normalize base path to the canonical form by adding trailing and leading slashes
+     * @param basePath base path to normalize
+     * @return normalized base path
+     */
+    private static String normalizeBasePath(final String basePath) {
+        if (basePath == null) {
+            return basePath;
+        }
+
+        String normalizedBasePath = basePath.trim();
+        if (!normalizedBasePath.startsWith("/")) {
+            normalizedBasePath = "/" + normalizedBasePath;
+        }
+
+        if (!normalizedBasePath.endsWith("/")) {
+            normalizedBasePath = normalizedBasePath + "/";
+        }
+
+        return normalizedBasePath;
     }
 }
