@@ -23,19 +23,18 @@ import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
-import io.swagger.config.ScannerFactory;
 import io.swagger.jaxrs.config.BeanConfig;
-import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
-import io.swagger.models.Swagger;
-import io.swagger.models.auth.ApiKeyAuthDefinition;
-import io.swagger.models.auth.In;
-import io.swagger.models.auth.OAuth2Definition;
+import org.glassfish.jersey.process.Inflector;
+import org.glassfish.jersey.server.model.Resource;
 
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.MediaType;
+import java.util.List;
 import java.util.Map;
 
 /**
- * A {@link io.dropwizard.ConfiguredBundle} that provides hassle-free configuration of Swagger and Swagger UI
+ * A {@link ConfiguredBundle} that provides hassle-free configuration of Swagger and Swagger UI
  * on top of Dropwizard.
  *
  * @author Federico Recio
@@ -56,30 +55,48 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
 
     @Override
     public void run(T configuration, Environment environment) throws Exception {
-        SwaggerBundleConfiguration swaggerBundleConfiguration = getSwaggerBundleConfiguration(configuration);
-        if (swaggerBundleConfiguration == null) {
-            throw new IllegalStateException("You need to provide an instance of SwaggerBundleConfiguration");
+        List<SwaggerBundleConfiguration> swaggerBundleConfigurations = getSwaggerBundleConfiguration(configuration);
+        if (swaggerBundleConfigurations.isEmpty()) {
+            throw new IllegalStateException("You need to provide at least one instance of SwaggerBundleConfiguration");
         }
-
-        ConfigurationHelper configurationHelper = new ConfigurationHelper(configuration, swaggerBundleConfiguration);
-        new AssetsBundle(Constants.SWAGGER_RESOURCES_PATH, configurationHelper.getSwaggerUriPath(), null, Constants.SWAGGER_ASSETS_NAME).run(environment);
-
-        environment.jersey().register(new SwaggerResource(configurationHelper.getUrlPattern()));
         environment.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
-        BeanConfig beanConfig = setUpSwagger(swaggerBundleConfiguration, configurationHelper.getUrlPattern());
-        environment.jersey().register(new ApiListingResource());
         environment.jersey().register(new SwaggerSerializers());
 
-        Swagger swagger = beanConfig.getSwagger();
+        swaggerBundleConfigurations.forEach(swaggerConfig -> {
+            ConfigurationHelper configurationHelper = new ConfigurationHelper(configuration, swaggerConfig);
+            new AssetsBundle(Constants.SWAGGER_RESOURCES_PATH,
+                    configurationHelper.getSwaggerUriPath(),
+                    null,
+                    configurationHelper.getAssetName()).run(environment);
 
-        environment.getApplicationContext().setAttribute("swagger", swagger);
+            // Register the resource that returns the swagger HTML
+            Resource.Builder resourceBuilder = Resource
+                    .builder()
+                    .path(configurationHelper.getHtmlResourcePath());
+            resourceBuilder
+                    .addMethod("GET")
+                    .produces(MediaType.TEXT_HTML)
+                    .handledBy((Inflector<ContainerRequestContext, SwaggerView>) containerRequestContext -> new SwaggerView(configurationHelper.getSwaggerViewPath()));
+            Resource resource = resourceBuilder.build();
+            environment.jersey().getResourceConfig().registerResources(resource);
+
+            BeanConfig beanConfig = setUpSwagger(swaggerConfig, configurationHelper.getBaseUrl());
+            // Register the resource that returns swagger.json
+            Resource swaggerJSONResource = Resource
+                    .builder(ApiListingResource.class)
+                    .path(configurationHelper.getSwaggerAPIListingPath())
+                    .build();
+            environment.jersey().getResourceConfig().registerResources(swaggerJSONResource);
+
+            environment.getApplicationContext().setAttribute(configurationHelper.getSwaggerName(), beanConfig.getSwagger());
+
+        });
     }
 
     @SuppressWarnings("unused")
-    protected abstract SwaggerBundleConfiguration getSwaggerBundleConfiguration(T configuration);
+    protected abstract List<SwaggerBundleConfiguration> getSwaggerBundleConfiguration(T configuration);
 
-    private BeanConfig setUpSwagger(SwaggerBundleConfiguration swaggerBundleConfiguration, String urlPattern) throws Exception {
+    private BeanConfig setUpSwagger(SwaggerBundleConfiguration swaggerBundleConfiguration, String baseUrl) {
         BeanConfig config = new BeanConfig();
 
         if (swaggerBundleConfiguration.getTitle() != null) {
@@ -125,15 +142,15 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
 //            }
 //        }
 
-        config.setBasePath(urlPattern);
+        config.setUsePathBasedConfig(true);
+        config.setBasePath(baseUrl);
 
         if (swaggerBundleConfiguration.getResourcePackage() != null) {
             config.setResourcePackage(swaggerBundleConfiguration.getResourcePackage());
+            config.setScan(true);
         } else {
             throw new IllegalStateException("Resource package needs to be specified for Swagger to correctly detect annotated resources");
         }
-
-        config.setScan(true);
 
         return config;
     }

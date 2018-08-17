@@ -17,7 +17,6 @@ package io.federecio.dropwizard.swagger;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.models.auth.SecuritySchemeDefinition;
 
 import java.util.List;
 
@@ -66,11 +65,7 @@ public class SwaggerBundleConfiguration {
     /**
      * For most of the scenarios this property is not needed.
      * <p/>
-     * This is not a property for Swagger but for bundle to set up Swagger UI correctly.
-     * It only needs to be used of the root path or the context path is set programatically
-     * and therefore cannot be derived correctly. The problem arises in that if you set the
-     * root path or context path in the run() method in your Application subclass the bundle
-     * has already been initialized by that time and so does not know you set the path programatically.
+     * this will be added to application path and rootPath before adding "/swagger" suffix
      */
     @JsonProperty
     private String uriPrefix;

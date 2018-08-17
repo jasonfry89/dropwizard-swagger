@@ -37,14 +37,50 @@ public class ConfigurationHelper {
         this.swaggerBundleConfiguration = swaggerBundleConfiguration;
     }
 
-    public String getJerseyRootPath() {
-        // if the user explictly defined a path to prefix requests use it instead of derive it
-        if (swaggerBundleConfiguration.getUriPrefix() != null) {
-            return swaggerBundleConfiguration.getUriPrefix();
+    public String getAssetName() {
+        return Constants.SWAGGER_ASSETS_NAME + swaggerBundleConfiguration.getUriPrefix();
+    }
+
+    public String getSwaggerViewPath(){
+        final String baseUrl = getBaseUrl();
+        final String uriPrefix = stripUrlSlashes(this.swaggerBundleConfiguration.getUriPrefix());
+        if (baseUrl.equals("/") && uriPrefix.equals("/")) {
+            return "";
         }
+        return (baseUrl.equals("/") ? "" : baseUrl) + (uriPrefix.equals("/") ? "" : uriPrefix);
+    }
 
+    public String getHtmlResourcePath() {
+        final String uriPrefix = stripUrlSlashes(this.swaggerBundleConfiguration.getUriPrefix());
+        return (uriPrefix.equals("/") ? "" : uriPrefix) + Constants.SWAGGER_PATH;
+    }
+
+    public String getSwaggerUriPath() {
+        final String jerseyRootPath = getJerseyRootPath();
+        final String uriPrefix = stripUrlSlashes(this.swaggerBundleConfiguration.getUriPrefix());
+        return (jerseyRootPath.equals("/") ? "" : jerseyRootPath) + (uriPrefix.equals("/") ? "" : uriPrefix) + Constants.SWAGGER_URI_PATH;
+    }
+
+    public String getSwaggerAPIListingPath(){
+        final String uriPrefix = stripUrlSlashes(this.swaggerBundleConfiguration.getUriPrefix());
+        return (uriPrefix.equals("/") ? "" : uriPrefix) + "/swagger.{type:json|yaml}";
+    }
+
+    public String getBaseUrl() {
+        final String applicationContextPath = getApplicationContextPath();
+        final String rootPath = getJerseyRootPath();
+        if (rootPath.equals("/") && applicationContextPath.equals("/")) {
+            return "";
+        }
+        return (applicationContextPath.equals("/") ? "" : applicationContextPath) + (rootPath.equals("/") ? "" : rootPath);
+    }
+
+    public String getSwaggerName(){
+        return "swagger" + getSwaggerViewPath();
+    }
+
+    private String getJerseyRootPath() {
         String rootPath;
-
         ServerFactory serverFactory = configuration.getServerFactory();
 
         if (serverFactory instanceof SimpleServerFactory) {
@@ -54,36 +90,6 @@ public class ConfigurationHelper {
         }
 
         return stripUrlSlashes(rootPath);
-    }
-
-    public String getUrlPattern() {
-        // if the user explictly defined a path to prefix requests use it instead of derive it
-        if (swaggerBundleConfiguration.getUriPrefix() != null) {
-            return swaggerBundleConfiguration.getUriPrefix();
-        }
-
-        final String applicationContextPath = getApplicationContextPath();
-        final String rootPath = getJerseyRootPath();
-
-        String urlPattern;
-
-        if (rootPath.equals("/") && applicationContextPath.equals("/")) {
-            urlPattern = "/";
-        } else if (rootPath.equals("/") && !applicationContextPath.equals("/")) {
-            urlPattern = applicationContextPath;
-        } else if (!rootPath.equals("/") && applicationContextPath.equals("/")) {
-            urlPattern = rootPath;
-        } else {
-            urlPattern = applicationContextPath + rootPath;
-        }
-
-        return urlPattern;
-    }
-
-    public String getSwaggerUriPath() {
-        final String jerseyRootPath = getJerseyRootPath();
-        String uriPathPrefix = jerseyRootPath.equals("/") ? "" : jerseyRootPath;
-        return uriPathPrefix + Constants.SWAGGER_URI_PATH;
     }
 
     private String getApplicationContextPath() {
