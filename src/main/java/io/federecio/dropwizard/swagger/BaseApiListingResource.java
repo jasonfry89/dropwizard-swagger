@@ -59,7 +59,6 @@ public class BaseApiListingResource extends io.swagger.jaxrs.listing.BaseApiList
         String path = getPath(uriInfo);
 
         SwaggerContextService ctxService = new SwaggerContextService(sc,  uriInfo.getBaseUri().getPath());
-
         Swagger swagger = ctxService.getSwagger(path);
 
         synchronized (ApiListingResource.class) {
@@ -176,7 +175,9 @@ public class BaseApiListingResource extends io.swagger.jaxrs.listing.BaseApiList
     }
 
     private String getPath(UriInfo uriInfo) {
-        return uriInfo.getRequestUri().getPath().replace("/swagger.json", "");
+        String path = uriInfo.getRequestUri().getPath();
+        return path.contains("/swagger.json")
+                ? path.replace("/swagger.json", "")
+                : path.replace("/swagger.yaml", "");
     }
 }
-

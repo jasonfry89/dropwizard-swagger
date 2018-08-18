@@ -82,30 +82,17 @@ public class ConfigurationHelper {
     }
 
     private String getJerseyRootPath() {
-        String rootPath;
         ServerFactory serverFactory = configuration.getServerFactory();
-
-        if (serverFactory instanceof SimpleServerFactory) {
-            rootPath = ((SimpleServerFactory) serverFactory).getJerseyRootPath().get();
-        } else {
-            rootPath = ((DefaultServerFactory) serverFactory).getJerseyRootPath().get();
-        }
-
-        return stripUrlSlashes(rootPath);
+        return serverFactory instanceof SimpleServerFactory
+                ? stripUrlSlashes(((SimpleServerFactory) serverFactory).getJerseyRootPath().get())
+                : stripUrlSlashes(((DefaultServerFactory) serverFactory).getJerseyRootPath().get());
     }
 
     private String getApplicationContextPath() {
-        String applicationContextPath;
-
         ServerFactory serverFactory = configuration.getServerFactory();
-
-        if (serverFactory instanceof SimpleServerFactory) {
-            applicationContextPath = ((SimpleServerFactory) serverFactory).getApplicationContextPath();
-        } else {
-            applicationContextPath = ((DefaultServerFactory) serverFactory).getApplicationContextPath();
-        }
-
-        return stripUrlSlashes(applicationContextPath);
+        return serverFactory instanceof SimpleServerFactory
+                ? stripUrlSlashes(((SimpleServerFactory) serverFactory).getApplicationContextPath())
+                : stripUrlSlashes(((DefaultServerFactory) serverFactory).getApplicationContextPath());
     }
 
     private String stripUrlSlashes(String urlToStrip) {

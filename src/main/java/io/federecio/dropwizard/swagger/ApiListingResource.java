@@ -16,6 +16,7 @@
 package io.federecio.dropwizard.swagger;
 
 import io.swagger.annotations.ApiOperation;
+import io.swagger.models.Swagger;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.ServletConfig;
@@ -46,11 +47,12 @@ public class ApiListingResource extends BaseApiListingResource {
             @Context HttpHeaders headers,
             @Context UriInfo uriInfo,
             @PathParam("type") String type) {
-        if (StringUtils.isNotBlank(type) && type.trim().equalsIgnoreCase("yaml")) {
-            return getListingYamlResponse(app, context, sc, headers, uriInfo);
-        } else {
-            return getListingJsonResponse(app, context, sc, headers, uriInfo);
-        }
+
+        Swagger swagger = process(app, context, sc, headers, uriInfo);
+        if (swagger == null) return Response.status(404).build();
+        String contentType = StringUtils.isNotBlank(type) && type.trim().equalsIgnoreCase("yaml") ? "application/yaml"
+                : MediaType.APPLICATION_JSON;
+        return Response.ok().entity(swagger).type(contentType).build();
     }
 }
 

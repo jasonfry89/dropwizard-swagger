@@ -75,18 +75,11 @@ public class SwaggerContextService extends io.swagger.jaxrs.config.SwaggerContex
      * @return normalized base path
      */
     private static String normalizeBasePath(final String basePath) {
-        if (basePath == null) {
-            return basePath;
-        }
+        if (basePath == null) return basePath;
 
         String normalizedBasePath = basePath.trim();
-        if (!normalizedBasePath.startsWith("/")) {
-            normalizedBasePath = "/" + normalizedBasePath;
-        }
-
-        if (!normalizedBasePath.endsWith("/")) {
-            normalizedBasePath = normalizedBasePath + "/";
-        }
+        if (!normalizedBasePath.startsWith("/")) normalizedBasePath = "/" + normalizedBasePath;
+        if (!normalizedBasePath.endsWith("/")) normalizedBasePath = normalizedBasePath + "/";
 
         return normalizedBasePath;
     }
