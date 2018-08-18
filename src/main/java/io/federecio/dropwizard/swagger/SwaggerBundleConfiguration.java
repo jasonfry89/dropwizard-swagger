@@ -18,6 +18,7 @@ package io.federecio.dropwizard.swagger;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -64,11 +65,16 @@ public class SwaggerBundleConfiguration {
 
     /**
      * For most of the scenarios this property is not needed.
-     * <p/>
      * this will be added to application path and rootPath before adding "/swagger" suffix
      */
     @JsonProperty
     private String uriPrefix;
+
+    /**
+     * Values used for api listing filtering
+     */
+    @JsonProperty
+    private HashSet<String> apiListingFilters = new HashSet<>();
 
     public String getResourcePackage() {
         return resourcePackage;
@@ -150,6 +156,14 @@ public class SwaggerBundleConfiguration {
         this.securityConfigurations = securityConfigurations;
     }
 
+    public HashSet<String> getApiListingFilters() {
+        return apiListingFilters;
+    }
+
+    public void setApiListingFilters(HashSet<String> apiListingFilters) {
+        this.apiListingFilters = apiListingFilters;
+    }
+
     @Override
     public String toString() {
         return "SwaggerBundleConfiguration{" +
@@ -163,6 +177,7 @@ public class SwaggerBundleConfiguration {
                 ", licenseUrl='" + licenseUrl + '\'' +
                 ", securityConfigurations=" + securityConfigurations +
                 ", uriPrefix='" + uriPrefix + '\'' +
+                ", apiListingFilters=" + apiListingFilters +
                 '}';
     }
 }

@@ -25,13 +25,16 @@ import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
+import io.swagger.models.Swagger;
+import io.swagger.util.ReflectionUtils;
 import org.glassfish.jersey.process.Inflector;
 import org.glassfish.jersey.server.model.Resource;
 
+import javax.ws.rs.Path;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.MediaType;
-import java.util.List;
-import java.util.Map;
+import java.lang.reflect.Method;
+import java.util.*;
 
 /**
  * A {@link ConfiguredBundle} that provides hassle-free configuration of Swagger and Swagger UI
@@ -54,7 +57,7 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
     }
 
     @Override
-    public void run(T configuration, Environment environment) throws Exception {
+    public void run(T configuration, Environment environment) {
         List<SwaggerBundleConfiguration> swaggerBundleConfigurations = getSwaggerBundleConfiguration(configuration);
         if (swaggerBundleConfigurations.isEmpty()) {
             throw new IllegalStateException("You need to provide at least one instance of SwaggerBundleConfiguration");
@@ -88,8 +91,8 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
                     .build();
             environment.jersey().getResourceConfig().registerResources(swaggerJSONResource);
 
+            applyApiListingFilter(beanConfig, configurationHelper);
             environment.getApplicationContext().setAttribute(configurationHelper.getSwaggerName(), beanConfig.getSwagger());
-
         });
     }
 
@@ -153,5 +156,55 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
         }
 
         return config;
+    }
+
+
+    private void applyApiListingFilter(BeanConfig beanConfig, ConfigurationHelper configurationHelper) {
+        LinkedHashMap<String, io.swagger.models.Path> allowedEndpoints = getAllowedEnpoints(beanConfig, configurationHelper);
+        beanConfig.getSwagger().setPaths(allowedEndpoints);
+    }
+
+    private LinkedHashMap<String, io.swagger.models.Path> getAllowedEnpoints(
+            BeanConfig beanConfig, ConfigurationHelper configurationHelper) {
+        LinkedHashMap<String, io.swagger.models.Path> allowedEndpoints = new LinkedHashMap<>();
+        HashSet<String> resourceFilters = configurationHelper.getApiListingFilters();
+        Set<Class<?>> classes = beanConfig.classes();
+
+        for (Class<?> klazz : classes) {
+            HashSet<String> classFilters = getFilters(ReflectionUtils.getAnnotation(klazz, ApiListingFilter.class));
+            Path apiPath = ReflectionUtils.getAnnotation(klazz, javax.ws.rs.Path.class);
+            Method methods[] = klazz.getMethods();
+
+            for (Method method : methods) {
+                boolean includeEndpoint = resourceFilters.isEmpty()
+                        || classFilters.stream().anyMatch(resourceFilters::contains)
+                        || getFilters(ReflectionUtils.getAnnotation(method, ApiListingFilter.class)).stream().anyMatch(resourceFilters::contains);
+                if (includeEndpoint) {
+                    Path methodPath = ReflectionUtils.getAnnotation(method, Path.class);
+                    String operationPath = getPath(apiPath, methodPath, configurationHelper);
+                    if(operationPath != null)
+                        allowedEndpoints.put(operationPath, beanConfig.getSwagger().getPaths().get(operationPath));
+                }
+            }
+        }
+
+        return allowedEndpoints;
+    }
+
+    private HashSet<String> getFilters(ApiListingFilter filter) {
+        if (filter == null) return new HashSet<>();
+        return new HashSet<>(Arrays.asList(filter.values()));
+    }
+
+    private String getPath(Path classLevelPath, Path methodLevelPath, ConfigurationHelper configurationHelper) {
+        if (classLevelPath == null && methodLevelPath == null) return null;
+        String classPath = "/";
+        String methodPath = "/";
+
+        if (classLevelPath != null) classPath = configurationHelper.stripAndNormalizeUrl(classLevelPath.value());
+        if (methodLevelPath != null) methodPath = configurationHelper.stripAndNormalizeUrl(methodLevelPath.value());
+
+        if (classPath.equals("/") && methodPath.equals("/")) return null;
+        return (classPath.equals("/") ? "" : classPath) + (methodPath.equals("/") ? "" : methodPath);
     }
 }

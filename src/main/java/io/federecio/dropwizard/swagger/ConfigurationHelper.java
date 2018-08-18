@@ -20,6 +20,8 @@ import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.server.ServerFactory;
 import io.dropwizard.server.SimpleServerFactory;
 
+import java.util.HashSet;
+
 /**
  * Wrapper around Dropwizard's configuration and the bundle's config that simplifies getting some
  * information from them.
@@ -116,5 +118,18 @@ public class ConfigurationHelper {
         }
 
         return urlToStrip;
+    }
+
+    private String normalizeUrl(String url) {
+        if (!url.startsWith("/")) return "/" + url;
+        return url;
+    }
+
+    protected String stripAndNormalizeUrl(String url) {
+        return normalizeUrl(stripUrlSlashes(url));
+    }
+
+    protected HashSet<String> getApiListingFilters(){
+        return swaggerBundleConfiguration.getApiListingFilters();
     }
 }
