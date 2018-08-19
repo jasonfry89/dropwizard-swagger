@@ -147,13 +147,11 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
 
         config.setBasePath(baseUrl);
 
-        if (swaggerBundleConfiguration.getResourcePackage() != null) {
-            config.setResourcePackage(swaggerBundleConfiguration.getResourcePackage());
-            config.setScan(true);
-        } else {
+        if (swaggerBundleConfiguration.getResourcePackage() == null) {
             throw new IllegalStateException("Resource package needs to be specified for Swagger to correctly detect annotated resources");
         }
-
+        config.setResourcePackage(swaggerBundleConfiguration.getResourcePackage());
+        config.setScan(true);
         return config;
     }
 

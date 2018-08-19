@@ -56,10 +56,9 @@ public class BaseApiListingResource extends io.swagger.jaxrs.listing.BaseApiList
             ServletConfig sc,
             HttpHeaders headers,
             UriInfo uriInfo) {
-        String path = getPath(uriInfo);
 
-        SwaggerContextService ctxService = new SwaggerContextService(sc,  uriInfo.getBaseUri().getPath());
-        Swagger swagger = ctxService.getSwagger(path);
+        SwaggerContextService ctxService = new SwaggerContextService(sc, getBasePath(uriInfo));
+        Swagger swagger = ctxService.getSwagger(getPath(uriInfo));
 
         synchronized (ApiListingResource.class) {
             if (SwaggerContextService.isScannerIdInitParamDefined(sc)) {
@@ -74,6 +73,8 @@ public class BaseApiListingResource extends io.swagger.jaxrs.listing.BaseApiList
                 if (!initializedConfig.containsKey(sc.getServletName() + "_" + ctxService.getBasePath())) {
                     swagger = scan(app, servletContext, sc, uriInfo);
                 }
+            } else if (swagger == null) {
+                swagger = scan(app, servletContext, sc, uriInfo);
             }
         }
 
@@ -93,14 +94,14 @@ public class BaseApiListingResource extends io.swagger.jaxrs.listing.BaseApiList
 
         io.swagger.jaxrs.config.SwaggerContextService ctxService = new io.swagger.jaxrs.config.SwaggerContextService()
                 .withServletConfig(sc)
-                .withBasePath(uriInfo.getBaseUri().getPath());
+                .withBasePath(getBasePath(uriInfo));
 
         Scanner scanner = ctxService.getScanner();
         if (scanner != null) {
             SwaggerSerializers.setPrettyPrint(scanner.getPrettyPrint());
             swagger = new io.swagger.jaxrs.config.SwaggerContextService()
                     .withServletConfig(sc)
-                    .withBasePath(uriInfo.getBaseUri().getPath())
+                    .withBasePath(getBasePath(uriInfo))
                     .getSwagger();
             Set<Class<?>> classes;
             if (scanner instanceof JaxrsScanner) {
@@ -125,7 +126,7 @@ public class BaseApiListingResource extends io.swagger.jaxrs.listing.BaseApiList
                 }
                 new io.swagger.jaxrs.config.SwaggerContextService()
                         .withServletConfig(sc)
-                        .withBasePath(uriInfo.getBaseUri().getPath())
+                        .withBasePath(getBasePath(uriInfo))
                         .updateSwagger(swagger);
             }
         }
@@ -179,5 +180,13 @@ public class BaseApiListingResource extends io.swagger.jaxrs.listing.BaseApiList
         return path.contains("/swagger.json")
                 ? path.replace("/swagger.json", "")
                 : path.replace("/swagger.yaml", "");
+    }
+
+    private static String getBasePath(UriInfo uriInfo) {
+        if (uriInfo != null) {
+            return uriInfo.getBaseUri().getPath();
+        } else {
+            return "/";
+        }
     }
 }

@@ -84,8 +84,8 @@ public class ConfigurationHelper {
     private String getJerseyRootPath() {
         ServerFactory serverFactory = configuration.getServerFactory();
         return serverFactory instanceof SimpleServerFactory
-                ? stripUrlSlashes(((SimpleServerFactory) serverFactory).getJerseyRootPath().get())
-                : stripUrlSlashes(((DefaultServerFactory) serverFactory).getJerseyRootPath().get());
+                ? stripUrlSlashes(((SimpleServerFactory) serverFactory).getJerseyRootPath().orElse("/"))
+                : stripUrlSlashes(((DefaultServerFactory) serverFactory).getJerseyRootPath().orElse("/"));
     }
 
     private String getApplicationContextPath() {

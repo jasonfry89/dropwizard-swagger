@@ -32,16 +32,15 @@ public class SwaggerContextService extends io.swagger.jaxrs.config.SwaggerContex
     private String basePath;
     private ServletConfig sc;
 
-    public SwaggerContextService(ServletConfig sc, String basePath) {
+    SwaggerContextService(ServletConfig sc, String basePath) {
         this.basePath = normalizeBasePath(basePath);
-        this.sc = sc;
+        if (isServletConfigAvailable(sc)) this.sc = sc;
     }
 
-    public Swagger getSwagger(String uriPath) {
+    public Swagger getSwagger(String swaggerPath) {
         Swagger swagger = null;
-        if (isServletConfigAvailable(sc)) swagger = (Swagger) sc.getServletContext().getAttribute("swagger" + uriPath);
+        if (isServletConfigAvailable(sc)) swagger = (Swagger) sc.getServletContext().getAttribute("swagger" + swaggerPath);
         if (swagger == null) swagger = (Swagger) getSwaggerFromConfig();
-        if (swagger == null) swagger = new Swagger();
         return swagger;
     }
 

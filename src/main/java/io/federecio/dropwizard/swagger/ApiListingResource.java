@@ -49,9 +49,11 @@ public class ApiListingResource extends BaseApiListingResource {
             @PathParam("type") String type) {
 
         Swagger swagger = process(app, context, sc, headers, uriInfo);
+
         if (swagger == null) return Response.status(404).build();
-        String contentType = StringUtils.isNotBlank(type) && type.trim().equalsIgnoreCase("yaml") ? "application/yaml"
-                : MediaType.APPLICATION_JSON;
+
+        String contentType = StringUtils.isNotBlank(type) && type.trim().equalsIgnoreCase("yaml")
+                ? "application/yaml" : MediaType.APPLICATION_JSON;
         return Response.ok().entity(swagger).type(contentType).build();
     }
 }
