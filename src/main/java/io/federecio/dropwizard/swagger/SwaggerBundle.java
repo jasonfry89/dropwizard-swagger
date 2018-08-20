@@ -24,18 +24,19 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
 import io.swagger.jaxrs.config.BeanConfig;
-import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
-import io.swagger.models.Swagger;
+import io.swagger.util.ReflectionUtils;
 import org.glassfish.jersey.process.Inflector;
 import org.glassfish.jersey.server.model.Resource;
 
+import javax.ws.rs.Path;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.MediaType;
-import java.util.Map;
+import java.lang.reflect.Method;
+import java.util.*;
 
 /**
- * A {@link io.dropwizard.ConfiguredBundle} that provides hassle-free configuration of Swagger and Swagger UI
+ * A {@link ConfiguredBundle} that provides hassle-free configuration of Swagger and Swagger UI
  * on top of Dropwizard.
  *
  * @author Federico Recio
@@ -56,51 +57,49 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
 
     @Override
     public void run(T configuration, Environment environment) {
-        SwaggerBundleConfiguration swaggerBundleConfiguration = getSwaggerBundleConfiguration(configuration);
-        if (swaggerBundleConfiguration == null) {
-            throw new IllegalStateException("You need to provide an instance of SwaggerBundleConfiguration");
+        List<SwaggerBundleConfiguration> swaggerBundleConfigurations = getSwaggerBundleConfigurations(configuration);
+        if (swaggerBundleConfigurations.isEmpty()) {
+            throw new IllegalStateException("Provide at least one instance of SwaggerBundleConfiguration");
         }
+        environment.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        environment.jersey().register(new SwaggerSerializers());
 
-        swaggerBundleConfiguration.getSwaggers().forEach(singleSwaggerConfiguration -> {
-            ConfigurationHelper configurationHelper = new ConfigurationHelper(configuration, singleSwaggerConfiguration);
-            new AssetsBundle(Constants.SWAGGER_RESOURCES_PATH, configurationHelper.getSwaggerUriPath(), null, Constants.SWAGGER_ASSETS_NAME).run(environment);
+        swaggerBundleConfigurations.forEach(swaggerConfig -> {
+            ConfigurationHelper configurationHelper = new ConfigurationHelper(configuration, swaggerConfig);
+            new AssetsBundle(
+                    Constants.SWAGGER_RESOURCES_PATH,
+                    configurationHelper.getSwaggerUriPath(),
+                    null,
+                    configurationHelper.getAssetName()).run(environment);
 
             // Register the resource that returns the swagger HTML
-            String urlPattern = configurationHelper.getUrlPattern();
             Resource.Builder resourceBuilder = Resource
                     .builder()
-                    .path(urlPattern);
+                    .path(configurationHelper.getHtmlResourcePath());
             resourceBuilder
                     .addMethod("GET")
                     .produces(MediaType.TEXT_HTML)
-                    .handledBy((Inflector<ContainerRequestContext, SwaggerView>) containerRequestContext -> new SwaggerView(urlPattern));
+                    .handledBy((Inflector<ContainerRequestContext, SwaggerView>) containerRequestContext -> new SwaggerView(configurationHelper.getSwaggerViewPath()));
             Resource resource = resourceBuilder.build();
             environment.jersey().getResourceConfig().registerResources(resource);
-//        environment.jersey().register(new SwaggerResource(urlPattern));
 
-            BeanConfig beanConfig = setUpSwagger(singleSwaggerConfiguration, configurationHelper.getUrlPattern());
-
+            BeanConfig beanConfig = setUpSwagger(swaggerConfig, configurationHelper.getBaseUrl());
             // Register the resource that returns swagger.json
             Resource swaggerJSONResource = Resource
                     .builder(ApiListingResource.class)
-                    .path(urlPattern + ".{type:json|yaml}")
+                    .path(configurationHelper.getSwaggerAPIListingPath())
                     .build();
             environment.jersey().getResourceConfig().registerResources(swaggerJSONResource);
-//        environment.jersey().register(new ApiListingResource());
 
-            // Register the serializers
-            environment.jersey().register(new SwaggerSerializers());
-            environment.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
-            Swagger swagger = beanConfig.getSwagger();
-            environment.getApplicationContext().setAttribute(urlPattern, swagger);
+            applyApiListingFilter(beanConfig, configurationHelper);
+            environment.getApplicationContext().setAttribute(configurationHelper.getSwaggerName(), beanConfig.getSwagger());
         });
     }
 
     @SuppressWarnings("unused")
-    protected abstract SwaggerBundleConfiguration getSwaggerBundleConfiguration(T configuration);
+    protected abstract List<SwaggerBundleConfiguration> getSwaggerBundleConfigurations(T configuration);
 
-    private BeanConfig setUpSwagger(SingleSwaggerConfiguration swaggerBundleConfiguration, String urlPattern) {
+    private BeanConfig setUpSwagger(SwaggerBundleConfiguration swaggerBundleConfiguration, String baseUrl) {
         BeanConfig config = new BeanConfig();
 
         if (swaggerBundleConfiguration.getTitle() != null) {
@@ -146,16 +145,64 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
 //            }
 //        }
 
-        config.setBasePath(urlPattern);
+        config.setBasePath(baseUrl);
 
-        if (swaggerBundleConfiguration.getResourcePackage() != null) {
-            config.setResourcePackage(swaggerBundleConfiguration.getResourcePackage());
-        } else {
+        if (swaggerBundleConfiguration.getResourcePackage() == null) {
             throw new IllegalStateException("Resource package needs to be specified for Swagger to correctly detect annotated resources");
         }
-
+        config.setResourcePackage(swaggerBundleConfiguration.getResourcePackage());
         config.setScan(true);
-
         return config;
+    }
+
+
+    private void applyApiListingFilter(BeanConfig beanConfig, ConfigurationHelper configurationHelper) {
+        LinkedHashMap<String, io.swagger.models.Path> allowedEndpoints = getAllowedEnpoints(beanConfig, configurationHelper);
+        beanConfig.getSwagger().setPaths(allowedEndpoints);
+    }
+
+    private LinkedHashMap<String, io.swagger.models.Path> getAllowedEnpoints(
+            BeanConfig beanConfig,
+            ConfigurationHelper configurationHelper) {
+
+        LinkedHashMap<String, io.swagger.models.Path> allowedEndpoints = new LinkedHashMap<>();
+        HashSet<String> resourceFilters = configurationHelper.getApiListingFilters();
+        Set<Class<?>> classes = beanConfig.classes();
+
+        for (Class<?> klazz : classes) {
+            HashSet<String> classFilters = getFilters(ReflectionUtils.getAnnotation(klazz, ApiListing.class));
+            Path apiPath = ReflectionUtils.getAnnotation(klazz, javax.ws.rs.Path.class);
+            Method methods[] = klazz.getMethods();
+
+            for (Method method : methods) {
+                boolean includeEndpoint = resourceFilters.isEmpty()
+                        || classFilters.stream().anyMatch(resourceFilters::contains)
+                        || getFilters(ReflectionUtils.getAnnotation(method, ApiListing.class)).stream().anyMatch(resourceFilters::contains);
+                if (includeEndpoint) {
+                    Path methodPath = ReflectionUtils.getAnnotation(method, Path.class);
+                    String operationPath = getPath(apiPath, methodPath, configurationHelper);
+                    io.swagger.models.Path path = beanConfig.getSwagger().getPaths().get(operationPath);
+                    if (!operationPath.equals("") && path != null) allowedEndpoints.put(operationPath, path);
+                }
+            }
+        }
+        return allowedEndpoints;
+    }
+
+    private HashSet<String> getFilters(ApiListing filter) {
+        if (filter == null) return new HashSet<>();
+        return new HashSet<>(Arrays.asList(filter.values()));
+    }
+
+    private String getPath(Path classLevelPath, Path methodLevelPath, ConfigurationHelper configurationHelper) {
+        if (classLevelPath == null && methodLevelPath == null) return "";
+        String classPath = "/";
+        String methodPath = "/";
+
+        if (classLevelPath != null) classPath = configurationHelper.stripAndNormalizeUrl(classLevelPath.value());
+        if (methodLevelPath != null) methodPath = configurationHelper.stripAndNormalizeUrl(methodLevelPath.value());
+
+        if (classPath.equals("/") && methodPath.equals("/")) return "";
+        return (classPath.equals("/") ? "" : classPath) + (methodPath.equals("/") ? "" : methodPath);
     }
 }

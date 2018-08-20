@@ -20,6 +20,8 @@ import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.server.ServerFactory;
 import io.dropwizard.server.SimpleServerFactory;
 
+import java.util.HashSet;
+
 /**
  * Wrapper around Dropwizard's configuration and the bundle's config that simplifies getting some
  * information from them.
@@ -30,74 +32,67 @@ import io.dropwizard.server.SimpleServerFactory;
 public class ConfigurationHelper {
 
     private final Configuration configuration;
-    private final SingleSwaggerConfiguration swaggerBundleConfiguration;
+    private final SwaggerBundleConfiguration swaggerBundleConfiguration;
 
-    public ConfigurationHelper(Configuration configuration, SingleSwaggerConfiguration swaggerBundleConfiguration) {
+    public ConfigurationHelper(Configuration configuration, SwaggerBundleConfiguration swaggerBundleConfiguration) {
         this.configuration = configuration;
         this.swaggerBundleConfiguration = swaggerBundleConfiguration;
     }
 
-    public String getJerseyRootPath() {
-        // if the user explictly defined a path to prefix requests use it instead of derive it
-        if (swaggerBundleConfiguration.getUriPrefix() != null) {
-            return swaggerBundleConfiguration.getUriPrefix();
-        }
-
-        String rootPath;
-
-        ServerFactory serverFactory = configuration.getServerFactory();
-
-        if (serverFactory instanceof SimpleServerFactory) {
-            rootPath = ((SimpleServerFactory) serverFactory).getJerseyRootPath().get();
-        } else {
-            rootPath = ((DefaultServerFactory) serverFactory).getJerseyRootPath().get();
-        }
-
-        return stripUrlSlashes(rootPath);
+    public String getAssetName() {
+        return Constants.SWAGGER_ASSETS_NAME + swaggerBundleConfiguration.getUriPrefix();
     }
 
-    public String getUrlPattern() {
-        // if the user explictly defined a path to prefix requests use it instead of derive it
-        if (swaggerBundleConfiguration.getUriPrefix() != null) {
-            return swaggerBundleConfiguration.getUriPrefix();
+    public String getSwaggerViewPath(){
+        final String baseUrl = getBaseUrl();
+        final String uriPrefix = stripUrlSlashes(this.swaggerBundleConfiguration.getUriPrefix());
+        if (baseUrl.equals("/") && uriPrefix.equals("/")) {
+            return "";
         }
+        return (baseUrl.equals("/") ? "" : baseUrl) + (uriPrefix.equals("/") ? "" : uriPrefix);
+    }
 
-        final String applicationContextPath = getApplicationContextPath();
-        final String rootPath = getJerseyRootPath();
-
-        String urlPattern;
-
-        if (rootPath.equals("/") && applicationContextPath.equals("/")) {
-            urlPattern = "/";
-        } else if (rootPath.equals("/") && !applicationContextPath.equals("/")) {
-            urlPattern = applicationContextPath;
-        } else if (!rootPath.equals("/") && applicationContextPath.equals("/")) {
-            urlPattern = rootPath;
-        } else {
-            urlPattern = applicationContextPath + rootPath;
-        }
-
-        return urlPattern;
+    public String getHtmlResourcePath() {
+        final String uriPrefix = stripUrlSlashes(this.swaggerBundleConfiguration.getUriPrefix());
+        return (uriPrefix.equals("/") ? "" : uriPrefix) + Constants.SWAGGER_PATH;
     }
 
     public String getSwaggerUriPath() {
         final String jerseyRootPath = getJerseyRootPath();
-        String uriPathPrefix = jerseyRootPath.equals("/") ? "" : jerseyRootPath;
-        return uriPathPrefix + Constants.SWAGGER_URI_PATH;
+        final String uriPrefix = stripUrlSlashes(this.swaggerBundleConfiguration.getUriPrefix());
+        return (jerseyRootPath.equals("/") ? "" : jerseyRootPath) + (uriPrefix.equals("/") ? "" : uriPrefix) + Constants.SWAGGER_URI_PATH;
+    }
+
+    public String getSwaggerAPIListingPath(){
+        final String uriPrefix = stripUrlSlashes(this.swaggerBundleConfiguration.getUriPrefix());
+        return (uriPrefix.equals("/") ? "" : uriPrefix) + "/swagger.{type:json|yaml}";
+    }
+
+    public String getBaseUrl() {
+        final String applicationContextPath = getApplicationContextPath();
+        final String rootPath = getJerseyRootPath();
+        if (rootPath.equals("/") && applicationContextPath.equals("/")) {
+            return "";
+        }
+        return (applicationContextPath.equals("/") ? "" : applicationContextPath) + (rootPath.equals("/") ? "" : rootPath);
+    }
+
+    public String getSwaggerName(){
+        return "swagger" + getSwaggerViewPath();
+    }
+
+    private String getJerseyRootPath() {
+        ServerFactory serverFactory = configuration.getServerFactory();
+        return serverFactory instanceof SimpleServerFactory
+                ? stripUrlSlashes(((SimpleServerFactory) serverFactory).getJerseyRootPath().orElse("/"))
+                : stripUrlSlashes(((DefaultServerFactory) serverFactory).getJerseyRootPath().orElse("/"));
     }
 
     private String getApplicationContextPath() {
-        String applicationContextPath;
-
         ServerFactory serverFactory = configuration.getServerFactory();
-
-        if (serverFactory instanceof SimpleServerFactory) {
-            applicationContextPath = ((SimpleServerFactory) serverFactory).getApplicationContextPath();
-        } else {
-            applicationContextPath = ((DefaultServerFactory) serverFactory).getApplicationContextPath();
-        }
-
-        return stripUrlSlashes(applicationContextPath);
+        return serverFactory instanceof SimpleServerFactory
+                ? stripUrlSlashes(((SimpleServerFactory) serverFactory).getApplicationContextPath())
+                : stripUrlSlashes(((DefaultServerFactory) serverFactory).getApplicationContextPath());
     }
 
     private String stripUrlSlashes(String urlToStrip) {
@@ -110,5 +105,18 @@ public class ConfigurationHelper {
         }
 
         return urlToStrip;
+    }
+
+    private String normalizeUrl(String url) {
+        if (!url.startsWith("/")) return "/" + url;
+        return url;
+    }
+
+    protected String stripAndNormalizeUrl(String url) {
+        return normalizeUrl(stripUrlSlashes(url));
+    }
+
+    protected HashSet<String> getApiListingFilters(){
+        return swaggerBundleConfiguration.getApiListingFilters();
     }
 }
