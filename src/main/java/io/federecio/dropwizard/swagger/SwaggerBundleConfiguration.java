@@ -68,7 +68,7 @@ public class SwaggerBundleConfiguration {
      * this will be added to application path and rootPath before adding "/swagger" suffix
      */
     @JsonProperty
-    private String uriPrefix;
+    private String uriPrefix = "/";
 
     /**
      * Values used for api listing filtering
