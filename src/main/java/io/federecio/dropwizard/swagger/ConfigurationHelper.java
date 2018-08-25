@@ -77,6 +77,11 @@ public class ConfigurationHelper {
         return (applicationContextPath.equals("/") ? "" : applicationContextPath) + (rootPath.equals("/") ? "" : rootPath);
     }
 
+    public String getSwaggerLoginPathWithBaseUrl() {
+        final String baseUrl = getBaseUrl();
+        return (baseUrl.equals("/") ? "" : baseUrl) + Constants.SWAGGER_LOGIN_PATH;
+    }
+
     public String getSwaggerName(){
         return "swagger" + getSwaggerViewPath();
     }

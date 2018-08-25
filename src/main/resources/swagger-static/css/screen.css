@@ -1298,3 +1298,50 @@
 .swagger-section .swagger-expand:before {
   content: "+";
 }
+
+.login-button{
+  color: #ffffff;
+  background-color: #0088cc;
+  display: inline-block;
+  padding: 6px 12px;
+  font-size: 14px;
+  line-height: 1.42857143;
+  text-align: center;
+  cursor: pointer;
+  border: 1px solid transparent;
+  width: 75px;
+  float: right;
+  margin-right: 13px;
+}
+
+.login-input{
+  width: 90%;
+  margin-bottom: 10px;
+  font-size: 0.9em;
+  padding: 7px;
+  display: block;
+}
+
+#login {
+  position: absolute;
+  right: 0;
+  left: 0;
+  top: 40%;
+  margin-left: auto;
+  margin-right: auto;
+  width: 320px;
+  padding: 30px 15px 15px;
+  background-color: #89bf04;
+  display: none;
+}
+
+#get-token{
+  padding-top: 1px;
+  font-weight: bold;
+  font-size: 0.9em;
+  color: white;
+  border: 0;
+  background-color: #547f00;
+  border-radius: 4px;
+  height: 25px;
+}

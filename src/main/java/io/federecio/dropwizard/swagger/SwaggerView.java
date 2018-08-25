@@ -29,8 +29,9 @@ public class SwaggerView extends View {
 
     private final String swaggerAssetsPath;
     private final String contextPath;
+    private final String loginUrl;
 
-    protected SwaggerView(String urlPattern) {
+    protected SwaggerView(String urlPattern, String loginUrl) {
         super("index.ftl", Charsets.UTF_8);
 
         if (urlPattern.equals("/")) {
@@ -44,6 +45,7 @@ public class SwaggerView extends View {
         } else {
             contextPath = urlPattern;
         }
+        this.loginUrl = loginUrl;
     }
 
     /**
@@ -60,5 +62,12 @@ public class SwaggerView extends View {
     @SuppressWarnings("unused")
     public String getContextPath() {
         return contextPath;
+    }
+
+    @SuppressWarnings("unused")
+
+
+    public String getLoginUrl() {
+        return loginUrl;
     }
 }

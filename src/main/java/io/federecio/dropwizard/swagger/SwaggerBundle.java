@@ -28,10 +28,12 @@ import io.swagger.jaxrs.listing.SwaggerSerializers;
 import io.swagger.util.ReflectionUtils;
 import org.glassfish.jersey.process.Inflector;
 import org.glassfish.jersey.server.model.Resource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.Path;
 import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.*;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -45,6 +47,8 @@ import java.util.*;
  */
 public abstract class SwaggerBundle<T extends Configuration> implements ConfiguredBundle<T> {
 
+    private static Logger logger = LoggerFactory.getLogger(SwaggerBundle.class);
+
     @Override
     public void initialize(Bootstrap<?> bootstrap) {
         bootstrap.addBundle(new ViewBundle<Configuration>() {
@@ -56,13 +60,27 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
     }
 
     @Override
-    public void run(T configuration, Environment environment) {
+    public void run(T configuration, Environment environment) throws Exception {
         List<SwaggerBundleConfiguration> swaggerBundleConfigurations = getSwaggerBundleConfigurations(configuration);
         if (swaggerBundleConfigurations.isEmpty()) {
             throw new IllegalStateException("Provide at least one instance of SwaggerBundleConfiguration");
         }
         environment.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
         environment.jersey().register(new SwaggerSerializers());
+
+        // Register the resource that authenticate swagger login
+        Resource.Builder swaggerLoginBuilder = Resource
+                .builder()
+                .path(Constants.SWAGGER_LOGIN_PATH);
+        try {
+            swaggerLoginBuilder.addMethod("POST")
+                    .produces(MediaType.TEXT_PLAIN)
+                    .handledBy(getAuthenticator(configuration), Authenticator.class.getMethod("getToken", String.class, String.class, UriInfo.class));
+        } catch (NoSuchMethodException e) {
+            logger.error("get token method not found in Authenticator.class");
+        }
+        Resource swaggerLoginResource = swaggerLoginBuilder.build();
+        environment.jersey().getResourceConfig().registerResources(swaggerLoginResource);
 
         swaggerBundleConfigurations.forEach(swaggerConfig -> {
             ConfigurationHelper configurationHelper = new ConfigurationHelper(configuration, swaggerConfig);
@@ -73,31 +91,32 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
                     configurationHelper.getAssetName()).run(environment);
 
             // Register the resource that returns the swagger HTML
-            Resource.Builder resourceBuilder = Resource
+            Resource.Builder swaggerHtmlBuilder = Resource
                     .builder()
                     .path(configurationHelper.getHtmlResourcePath());
-            resourceBuilder
-                    .addMethod("GET")
+            swaggerHtmlBuilder.addMethod("GET")
                     .produces(MediaType.TEXT_HTML)
-                    .handledBy((Inflector<ContainerRequestContext, SwaggerView>) containerRequestContext -> new SwaggerView(configurationHelper.getSwaggerViewPath()));
-            Resource resource = resourceBuilder.build();
-            environment.jersey().getResourceConfig().registerResources(resource);
+                    .handledBy((Inflector<ContainerRequestContext, SwaggerView>) containerRequestContext ->
+                            new SwaggerView(configurationHelper.getSwaggerViewPath(), configurationHelper.getSwaggerLoginPathWithBaseUrl()));
+            Resource swaggerHtmlResource = swaggerHtmlBuilder.build();
+            environment.jersey().getResourceConfig().registerResources(swaggerHtmlResource);
 
             BeanConfig beanConfig = setUpSwagger(swaggerConfig, configurationHelper.getBaseUrl());
-            // Register the resource that returns swagger.json
-            Resource swaggerJSONResource = Resource
+            // Register the resource that returns the swagger Listing json
+            Resource swaggerListingResource = Resource
                     .builder(ApiListingResource.class)
                     .path(configurationHelper.getSwaggerAPIListingPath())
                     .build();
-            environment.jersey().getResourceConfig().registerResources(swaggerJSONResource);
+            environment.jersey().getResourceConfig().registerResources(swaggerListingResource);
 
             applyApiListingFilter(beanConfig, configurationHelper);
             environment.getApplicationContext().setAttribute(configurationHelper.getSwaggerName(), beanConfig.getSwagger());
         });
     }
 
-    @SuppressWarnings("unused")
     protected abstract List<SwaggerBundleConfiguration> getSwaggerBundleConfigurations(T configuration);
+
+    protected abstract Authenticator getAuthenticator(T configuration);
 
     private BeanConfig setUpSwagger(SwaggerBundleConfiguration swaggerBundleConfiguration, String baseUrl) {
         BeanConfig config = new BeanConfig();

@@ -81,16 +81,60 @@
         validatorUrl: null
       });
 
+      const apiKeyInput = $('#input_apiKey');
+      const getToken = $('#get-token');
+      const loginForm = $('#login');
+      const loginCancel = $('#login-cancel');
+      const apiListingContainer = $('#swagger-ui-container');
+      const errorMessage = $('#error-message');
+
+      getToken.click(function (event) {
+          event.preventDefault();
+          apiListingContainer.hide();
+          loginForm.show();
+      });
+
+      loginCancel.click(function (event) {
+          event.preventDefault();
+          loginForm.hide();
+          apiListingContainer.show();
+      });
+
+      loginForm.submit(function (event) {
+          event.preventDefault();
+          login($('#username')[0].value.trim(), $('#password')[0].value.trim());
+      });
+
+      function login(username, password){
+          const url = window.swaggerUi.buildUrl(location.href, "${loginUrl}");
+          $.ajax({
+              url: url,
+              type: 'POST',
+              beforeSend: function (xhr) {
+                  xhr.setRequestHeader('username', username);
+                  xhr.setRequestHeader('password', password);
+              },
+              data: {},
+              success: function(data){
+                  const url = window.swaggerUi.buildUrl(location.href, '${contextPath}/swagger');
+                  location.href = url + '?token=' + data;
+              },
+              error: function () {
+                  errorMessage.show();
+              }
+          });
+      }
+
       function addApiKeyAuthorization(){
-        var key = encodeURIComponent($('#input_apiKey')[0].value);
-        if(key && key.trim() != "") {
+        var key = encodeURIComponent(apiKeyInput[0].value);
+        if(key && key.trim() !== "") {
             var apiKeyAuth = new SwaggerClient.ApiKeyAuthorization("Authorization", "Bearer " + key, "header");
             window.swaggerUi.api.clientAuthorizations.add("bearer", apiKeyAuth);
             log("added key " + key);
         }
       }
 
-      $('#input_apiKey').change(addApiKeyAuthorization);
+      apiKeyInput.change(addApiKeyAuthorization);
 
       // https://stackoverflow.com/questions/7731778/get-query-string-parameters-with-jquery
       function getQueryParameter(key) {
@@ -100,9 +144,9 @@
       }
 
       var tokenParam = getQueryParameter("token");
-        if(tokenParam) {
-            $('#input_apiKey').val(tokenParam);
-        }
+      if(tokenParam) {
+          apiKeyInput.val(tokenParam);
+      }
 
       window.swaggerUi.load();
       addApiKeyAuthorization();
@@ -124,9 +168,18 @@
       <div class='input'><input placeholder="http://example.com/api" id="input_baseUrl" name="baseUrl" type="text"/></div>
       <div class='input'><input placeholder="token" id="input_apiKey" name="apiKey" type="text"/></div>
       <div class='input'><a id="explore" href="#" data-sw-translate>Explore</a></div>
+      <div class='input'><button id="get-token" data-sw-translate>Get Token</button></div>
     </form>
   </div>
 </div>
+
+<form id='login' autocomplete="off">
+    <input class="login-input" id="username" type="text" placeholder="USERNAME">
+    <input class="login-input" id="password" type="password" placeholder="PASSWORD">
+    <p id="error-message" style="display: none; color: red; margin-bottom: 5px">Invalid email or password</p>
+    <button class="login-button" id="login-submit" style="background-color: #547f00">Submit</button>
+    <button class="login-button" id="login-cancel" style="background-color: dimgrey">Cancel</button>
+</form>
 
 <div id="message-bar" class="swagger-ui-wrap" data-sw-translate>&nbsp;</div>
 <div id="swagger-ui-container" class="swagger-ui-wrap"></div>

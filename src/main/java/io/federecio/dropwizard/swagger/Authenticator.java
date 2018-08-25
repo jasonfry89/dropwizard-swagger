@@ -13,27 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.federecio.dropwizard.swagger;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 
-/**
- * @author Federico Recio
- */
-@Path(Constants.SWAGGER_PATH)
-@Produces(MediaType.TEXT_HTML)
-public class SwaggerResource {
-    private final String urlPattern;
+public abstract class Authenticator {
 
-    public SwaggerResource(String urlPattern) {
-        this.urlPattern = urlPattern;
-    }
+    public abstract String login(String username, String password, UriInfo uriInfo);
 
-    @GET
-    public SwaggerView get() {
-        return new SwaggerView(urlPattern, urlPattern + Constants.SWAGGER_LOGIN_PATH);
+    public String getToken(
+            @HeaderParam(value = "username") String username,
+            @HeaderParam(value = "password") String password,
+            @Context UriInfo uriInfo) {
+        String token = login(username, password, uriInfo);
+        if (token == null || token.equals("")) throw new NotAuthorizedException("Not Authorized");
+        return token;
     }
 }

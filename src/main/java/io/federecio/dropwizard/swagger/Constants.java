@@ -47,4 +47,9 @@ public class Constants {
      * The path to which Swagger resources are bound to
      */
     public static final String SWAGGER_PATH = "/swagger";
+
+    /**
+     * The path to which Swagger authentication are bound to
+     */
+    public static final String SWAGGER_LOGIN_PATH = "/swagger/login";
 }
