@@ -17,17 +17,15 @@
 package io.federecio.dropwizard.swagger;
 
 import javax.ws.rs.*;
-import javax.ws.rs.core.*;
 
 public abstract class Authenticator {
 
-    public abstract String login(String username, String password, UriInfo uriInfo);
+    public abstract String login(String username, String password);
 
     public String getToken(
             @HeaderParam(value = "username") String username,
-            @HeaderParam(value = "password") String password,
-            @Context UriInfo uriInfo) {
-        String token = login(username, password, uriInfo);
+            @HeaderParam(value = "password") String password) {
+        String token = login(username, password);
         if (token == null || token.equals("")) throw new NotAuthorizedException("Not Authorized");
         return token;
     }

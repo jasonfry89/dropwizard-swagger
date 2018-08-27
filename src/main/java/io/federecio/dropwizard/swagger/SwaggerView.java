@@ -31,13 +31,13 @@ public class SwaggerView extends View {
     private final String contextPath;
     private final String loginUrl;
 
-    protected SwaggerView(String urlPattern, String loginUrl) {
+    SwaggerView(String baseUrl, String urlPattern, String loginUrl) {
         super("index.ftl", Charsets.UTF_8);
 
-        if (urlPattern.equals("/")) {
-            swaggerAssetsPath = Constants.SWAGGER_URI_PATH;
+        if (baseUrl.equals("/")) {
+            this.swaggerAssetsPath = Constants.SWAGGER_URI_PATH;
         } else {
-            swaggerAssetsPath = urlPattern + Constants.SWAGGER_URI_PATH;
+            this.swaggerAssetsPath = baseUrl + Constants.SWAGGER_URI_PATH;
         }
 
         if (urlPattern.equals("/")) {

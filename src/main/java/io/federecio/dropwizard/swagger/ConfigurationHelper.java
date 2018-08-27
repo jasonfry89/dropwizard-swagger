@@ -34,13 +34,9 @@ public class ConfigurationHelper {
     private final Configuration configuration;
     private final SwaggerBundleConfiguration swaggerBundleConfiguration;
 
-    public ConfigurationHelper(Configuration configuration, SwaggerBundleConfiguration swaggerBundleConfiguration) {
+    ConfigurationHelper(Configuration configuration, SwaggerBundleConfiguration swaggerBundleConfiguration) {
         this.configuration = configuration;
         this.swaggerBundleConfiguration = swaggerBundleConfiguration;
-    }
-
-    public String getAssetName() {
-        return Constants.SWAGGER_ASSETS_NAME + swaggerBundleConfiguration.getUriPrefix();
     }
 
     public String getSwaggerViewPath(){
@@ -59,8 +55,7 @@ public class ConfigurationHelper {
 
     public String getSwaggerUriPath() {
         final String jerseyRootPath = getJerseyRootPath();
-        final String uriPrefix = stripUrlSlashes(this.swaggerBundleConfiguration.getUriPrefix());
-        return (jerseyRootPath.equals("/") ? "" : jerseyRootPath) + (uriPrefix.equals("/") ? "" : uriPrefix) + Constants.SWAGGER_URI_PATH;
+        return (jerseyRootPath.equals("/") ? "" : jerseyRootPath) + Constants.SWAGGER_URI_PATH;
     }
 
     public String getSwaggerAPIListingPath(){

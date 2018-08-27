@@ -48,6 +48,7 @@ import java.util.*;
 public abstract class SwaggerBundle<T extends Configuration> implements ConfiguredBundle<T> {
 
     private static Logger logger = LoggerFactory.getLogger(SwaggerBundle.class);
+    private static boolean assetBundleRegistered = false;
 
     @Override
     public void initialize(Bootstrap<?> bootstrap) {
@@ -75,7 +76,7 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
         try {
             swaggerLoginBuilder.addMethod("POST")
                     .produces(MediaType.TEXT_PLAIN)
-                    .handledBy(getAuthenticator(configuration), Authenticator.class.getMethod("getToken", String.class, String.class, UriInfo.class));
+                    .handledBy(getAuthenticator(configuration), Authenticator.class.getMethod("getToken", String.class, String.class));
         } catch (NoSuchMethodException e) {
             logger.error("get token method not found in Authenticator.class");
         }
@@ -84,11 +85,15 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
 
         swaggerBundleConfigurations.forEach(swaggerConfig -> {
             ConfigurationHelper configurationHelper = new ConfigurationHelper(configuration, swaggerConfig);
-            new AssetsBundle(
-                    Constants.SWAGGER_RESOURCES_PATH,
-                    configurationHelper.getSwaggerUriPath(),
-                    null,
-                    configurationHelper.getAssetName()).run(environment);
+            //Register asset bundle resources
+            if (!assetBundleRegistered) {
+                new AssetsBundle(
+                        Constants.SWAGGER_RESOURCES_PATH,
+                        configurationHelper.getSwaggerUriPath(),
+                        null,
+                        Constants.SWAGGER_ASSETS_NAME).run(environment);
+                assetBundleRegistered = true;
+            }
 
             // Register the resource that returns the swagger HTML
             Resource.Builder swaggerHtmlBuilder = Resource
@@ -96,8 +101,8 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
                     .path(configurationHelper.getHtmlResourcePath());
             swaggerHtmlBuilder.addMethod("GET")
                     .produces(MediaType.TEXT_HTML)
-                    .handledBy((Inflector<ContainerRequestContext, SwaggerView>) containerRequestContext ->
-                            new SwaggerView(configurationHelper.getSwaggerViewPath(), configurationHelper.getSwaggerLoginPathWithBaseUrl()));
+                    .handledBy((Inflector<ContainerRequestContext, SwaggerView>) containerRequestContext -> new
+                            SwaggerView(configurationHelper.getBaseUrl(), configurationHelper.getSwaggerViewPath(), configurationHelper.getSwaggerLoginPathWithBaseUrl()));
             Resource swaggerHtmlResource = swaggerHtmlBuilder.build();
             environment.jersey().getResourceConfig().registerResources(swaggerHtmlResource);
 
