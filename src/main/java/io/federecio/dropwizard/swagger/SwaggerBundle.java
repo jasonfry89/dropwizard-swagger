@@ -154,20 +154,8 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
             config.setTermsOfServiceUrl(swaggerBundleConfiguration.getTermsOfServiceUrl());
         }
 
-//        if (swaggerBundleConfiguration.getSecurityConfigurations() != null) {
-//            for (SecurityConfiguration securityConfiguration : swaggerBundleConfiguration.getSecurityConfigurations()) {
-//                if(!securityConfiguration.getType().equals("oauth")) {
-//                    throw new Exception("asd");
-//                }
-//
-//                OAuth2Definition definition = new OAuth2Definition();
-//                definition.setFlow(securityConfiguration.getFlow());
-//                definition.setAuthorizationUrl(securityConfiguration.getAuthorizationUrl());
-//                definition.setTokenUrl(securityConfiguration.getTokenUrl());
-//                definition.setType(securityConfiguration.getType());
-//                config.getSwagger().addSecurityDefinition(securityConfiguration.getName(), definition);
-//            }
-//        }
+        // Testing setting host
+        config.setHost("localhost");
 
         config.setBasePath(baseUrl);
 
