@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * For the meaning of all these properties please refer to Swagger documentation or {@link io.swagger.jaxrs.config.BeanConfig}
@@ -75,6 +76,9 @@ public class SwaggerBundleConfiguration {
      */
     @JsonProperty
     private HashSet<String> apiListingFilters = new HashSet<>();
+
+    @JsonProperty
+    private String host;
 
     public String getResourcePackage() {
         return resourcePackage;
@@ -164,6 +168,38 @@ public class SwaggerBundleConfiguration {
         this.apiListingFilters = apiListingFilters;
     }
 
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SwaggerBundleConfiguration that = (SwaggerBundleConfiguration) o;
+        return Objects.equals(resourcePackage, that.resourcePackage) &&
+                Objects.equals(title, that.title) &&
+                Objects.equals(version, that.version) &&
+                Objects.equals(description, that.description) &&
+                Objects.equals(termsOfServiceUrl, that.termsOfServiceUrl) &&
+                Objects.equals(contact, that.contact) &&
+                Objects.equals(license, that.license) &&
+                Objects.equals(licenseUrl, that.licenseUrl) &&
+                Objects.equals(securityConfigurations, that.securityConfigurations) &&
+                Objects.equals(host, that.host) &&
+                Objects.equals(uriPrefix, that.uriPrefix) &&
+                Objects.equals(apiListingFilters, that.apiListingFilters);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(resourcePackage, title, version, description, termsOfServiceUrl, contact, license, licenseUrl, securityConfigurations, host, uriPrefix, apiListingFilters);
+    }
+
     @Override
     public String toString() {
         return "SwaggerBundleConfiguration{" +
@@ -176,6 +212,7 @@ public class SwaggerBundleConfiguration {
                 ", license='" + license + '\'' +
                 ", licenseUrl='" + licenseUrl + '\'' +
                 ", securityConfigurations=" + securityConfigurations +
+                ", host='" + host + '\'' +
                 ", uriPrefix='" + uriPrefix + '\'' +
                 ", apiListingFilters=" + apiListingFilters +
                 '}';

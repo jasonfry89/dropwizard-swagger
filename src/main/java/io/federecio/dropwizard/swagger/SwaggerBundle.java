@@ -123,46 +123,64 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
 
     protected abstract Authenticator getAuthenticator(T configuration);
 
-    private BeanConfig setUpSwagger(SwaggerBundleConfiguration swaggerBundleConfiguration, String baseUrl) {
+    private BeanConfig setUpSwagger(SwaggerBundleConfiguration configuration, String baseUrl) {
         BeanConfig config = new BeanConfig();
 
-        if (swaggerBundleConfiguration.getTitle() != null) {
-            config.setTitle(swaggerBundleConfiguration.getTitle());
+        if (configuration.getTitle() != null) {
+            config.setTitle(configuration.getTitle());
         }
 
-        if (swaggerBundleConfiguration.getVersion() != null) {
-            config.setVersion(swaggerBundleConfiguration.getVersion());
+        if (configuration.getVersion() != null) {
+            config.setVersion(configuration.getVersion());
         }
 
-        if (swaggerBundleConfiguration.getDescription() != null) {
-            config.setDescription(swaggerBundleConfiguration.getDescription());
+        if (configuration.getDescription() != null) {
+            config.setDescription(configuration.getDescription());
         }
 
-        if (swaggerBundleConfiguration.getContact() != null) {
-            config.setContact(swaggerBundleConfiguration.getContact());
+        if (configuration.getContact() != null) {
+            config.setContact(configuration.getContact());
         }
 
-        if (swaggerBundleConfiguration.getLicense() != null) {
-            config.setLicense(swaggerBundleConfiguration.getLicense());
+        if (configuration.getLicense() != null) {
+            config.setLicense(configuration.getLicense());
         }
 
-        if (swaggerBundleConfiguration.getLicenseUrl() != null) {
-            config.setLicenseUrl(swaggerBundleConfiguration.getLicenseUrl());
+        if (configuration.getLicenseUrl() != null) {
+            config.setLicenseUrl(configuration.getLicenseUrl());
         }
 
-        if (swaggerBundleConfiguration.getTermsOfServiceUrl() != null) {
-            config.setTermsOfServiceUrl(swaggerBundleConfiguration.getTermsOfServiceUrl());
+        if (configuration.getTermsOfServiceUrl() != null) {
+            config.setTermsOfServiceUrl(configuration.getTermsOfServiceUrl());
         }
 
-        // Testing setting host
-        config.setHost("localhost:8080");
-        config.setSchemes(new String[] { "https" });
+        // The host provided is of the form http://mything.com, https://mything.com, or mything.com
+        // Swagger requires us to split the http(s) component from the host
+        if(configuration.getHost() != null) {
+            final String host = configuration.getHost();
+            final String httpPrefix = "http://";
+            final boolean startsWithHTTP = host.startsWith(httpPrefix);
+            final String httpsPrefix = "https://";
+            final boolean startsWithHTTPS = host.startsWith(httpsPrefix);
+            if(startsWithHTTP) {
+                final String hostName = host.substring(httpPrefix.length());
+                config.setHost(hostName);
+                config.setSchemes(new String[] { "http" });
+            } else if(startsWithHTTPS) {
+                final String hostName = host.substring(httpsPrefix.length());
+                config.setHost(hostName);
+                config.setSchemes(new String[] { "https" });
+            } else {
+                config.setHost(host);
+            }
+        }
+
         config.setBasePath(baseUrl);
 
-        if (swaggerBundleConfiguration.getResourcePackage() == null) {
+        if (configuration.getResourcePackage() == null) {
             throw new IllegalStateException("Resource package needs to be specified for Swagger to correctly detect annotated resources");
         }
-        config.setResourcePackage(swaggerBundleConfiguration.getResourcePackage());
+        config.setResourcePackage(configuration.getResourcePackage());
         config.setScan(true);
         return config;
     }
