@@ -155,8 +155,8 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
         }
 
         // Testing setting host
-        config.setHost("https://localhost:8080");
-
+        config.setHost("localhost:8080");
+        config.setSchemes(new String[] { "https" });
         config.setBasePath(baseUrl);
 
         if (swaggerBundleConfiguration.getResourcePackage() == null) {
