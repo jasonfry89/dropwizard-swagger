@@ -155,7 +155,7 @@ public abstract class SwaggerBundle<T extends Configuration> implements Configur
         }
 
         // Testing setting host
-        config.setHost("localhost");
+        config.setHost("https://localhost:8080");
 
         config.setBasePath(baseUrl);
 
